@@ -1,0 +1,16 @@
+# Ficheiros compilados
+build/
+dist/
+
+# Ficheiros com dados reais (emails, contactos)
+destinatarios.txt
+lista_contactos_mailmerge.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Sistema
+.DS_Store
+Thumbs.db

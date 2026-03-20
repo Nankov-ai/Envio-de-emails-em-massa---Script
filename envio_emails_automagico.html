@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Envio de E-mails - Norauto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        input:focus, textarea:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .toast-enter {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+        .toast-active {
+            transform: translateY(0);
+            opacity: 1;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen p-4 md:p-8">
+
+    <!-- Toasts -->
+    <div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] pointer-events-none w-full max-w-xs sm:max-w-md px-4">
+        <div id="toast" class="toast-enter hidden bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+            <span id="toast-icon" class="text-xl">ℹ️</span>
+            <span id="toast-message" class="text-sm font-bold"></span>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Cabeçalho -->
+        <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
+                <div class="logo-container">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Logo_actuel_de_Norauto.png" alt="Logótipo Norauto" style="max-width: 150px;">
+                </div>
+                <div class="h-10 w-px bg-slate-200 hidden md:block"></div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight uppercase">Envio de <span class="text-blue-600">E-mails</span></h1>
+                    <p class="text-slate-500 text-sm">Comunicação em Massa</p>
+                </div>
+            </div>
+            <div>
+                <button type="button" onclick="clearForm()" class="text-xs text-slate-400 hover:text-red-500 transition-colors px-3 py-2 rounded-xl hover:bg-red-50" title="Limpar formulário">
+                    Limpar
+                </button>
+            </div>
+        </header>
+
+        <form id="email-form" class="space-y-6" onsubmit="return false;">
+            
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+                <h2 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <span class="w-6 h-6 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 text-[10px]">1</span>
+                    Dados do E-mail
+                </h2>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Assunto do E-mail *</label>
+                        <input type="text" id="assunto" required placeholder="Ex: Atualização de Políticas Internas" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Destinatários (E-mails) *</label>
+                        <p class="text-[10px] text-slate-400 mb-2">Pode separar os e-mails por vírgula, ponto e vírgula, espaço ou linhas.</p>
+                        <textarea id="destinatarios" required rows="4" placeholder="colaborador1@norauto.pt, colaborador2@norauto.pt&#10;colaborador3@norauto.pt" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none transition-all resize-none text-sm"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Corpo do E-mail</label>
+                        <textarea id="mensagem" rows="6" placeholder="Escreva a mensagem aqui..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none transition-all resize-none text-sm"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    <button type="button" onclick="abrirGmail()" class="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-3 shadow-xl">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        Abrir no Gmail
+                    </button>
+                    <p class="text-xs text-slate-400 mt-4 text-center sm:text-left">
+                        Os e-mails serão colocados em <strong>BCC (Cco)</strong> para proteger a privacidade dos destinatários.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 mb-10">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-6 h-6 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 text-[10px]">2</span>
+                        Histórico de Envios
+                    </h2>
+                    <button type="button" onclick="clearHistory()" class="text-xs text-slate-400 hover:text-red-500 transition-colors">Limpar histórico</button>
+                </div>
+                <div id="history-list" class="space-y-2">
+                    <p class="text-slate-400 text-sm text-center py-4">Sem envios anteriores.</p>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <script>
+        window.onload = () => {
+            renderHistory();
+        };
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+            toast.className = 'toast-enter px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 text-white transition-all duration-300';
+            
+            if (type === 'error') { toast.classList.add('bg-red-600'); toastIcon.innerHTML = '⚠️'; }
+            else if (type === 'success') { toast.classList.add('bg-green-600'); toastIcon.innerHTML = '✅'; }
+            else { toast.classList.add('bg-slate-900'); toastIcon.innerHTML = 'ℹ️'; }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-active'); }, 10);
+            setTimeout(() => { 
+                toast.classList.remove('toast-active'); 
+                toast.classList.add('toast-enter'); 
+                setTimeout(() => toast.classList.add('hidden'), 300); 
+            }, 4000);
+        }
+
+        function extractEmails(text) {
+            // Extrai possíveis endereços de e-mail de um texto com separadores variados
+            const regex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            const emails = text.match(regex);
+            return emails ? [...new Set(emails)] : []; // Remove duplicados
+        }
+
+        function abrirGmail() {
+            const assunto = document.getElementById('assunto').value.trim();
+            const destinatariosRaw = document.getElementById('destinatarios').value.trim();
+            const mensagem = document.getElementById('mensagem').value.trim();
+
+            if (!assunto) {
+                showToast('Por favor, preencha o assunto.', 'error');
+                return;
+            }
+
+            if (!destinatariosRaw) {
+                showToast('Por favor, indique os destinatários.', 'error');
+                return;
+            }
+
+            const emails = extractEmails(destinatariosRaw);
+            
+            if (emails.length === 0) {
+                showToast('Não foram encontrados e-mails válidos.', 'error');
+                return;
+            }
+
+            const emailsBcc = emails.join(',');
+            
+            // Gravar histórico
+            saveToHistory(assunto, emails.length);
+
+            // Gerar link
+            const urlAssunto = encodeURIComponent(assunto);
+            const urlMensagem = encodeURIComponent(mensagem);
+            
+            let url = '';
+            // Verificar dispositivo
+            if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                // Link mailto para mobile
+                url = `mailto:?bcc=${emailsBcc}&subject=${urlAssunto}&body=${urlMensagem}`;
+                window.location.href = url;
+            } else {
+                // Link web do Gmail
+                url = `https://mail.google.com/mail/?view=cm&fs=1&su=${urlAssunto}&body=${urlMensagem}&bcc=${emailsBcc}`;
+                window.open(url, '_blank');
+            }
+            
+            showToast('A redirecionar para o Gmail...', 'success');
+        }
+
+        function clearForm() {
+            if (!confirm('Tem a certeza que deseja limpar o formulário?')) return;
+            document.getElementById('email-form').reset();
+            showToast('Formulário limpo.', 'info');
+        }
+
+        /* ─── HISTÓRICO ─── */
+        function saveToHistory(assunto, count) {
+            try {
+                const history = JSON.parse(localStorage.getItem('email_history') || '[]');
+                const dataAtual = new Date();
+                history.unshift({ 
+                    assunto: assunto, 
+                    count: count, 
+                    date: dataAtual.toLocaleDateString('pt-PT'),
+                    time: dataAtual.toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})
+                });
+
+                if (history.length > 50) history.pop(); // Guarda os últimos 50
+                localStorage.setItem('email_history', JSON.stringify(history));
+                renderHistory();
+            } catch (e) {
+                console.error("Erro ao guardar histórico", e);
+            }
+        }
+
+        function renderHistory() {
+            try {
+                const history = JSON.parse(localStorage.getItem('email_history') || '[]');
+                const container = document.getElementById('history-list');
+
+                if (!history.length) {
+                    container.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">Sem envios anteriores.</p>';
+                    return;
+                }
+
+                container.innerHTML = history.map(h => `
+                    <div class="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors">
+                        <div>
+                            <span class="font-bold text-sm text-slate-800">${h.assunto}</span>
+                            <p class="text-[11px] text-slate-500 mt-1 uppercase tracking-wider">${h.date} às ${h.time}</p>
+                        </div>
+                        <div class="bg-blue-100 text-blue-700 font-black text-xs px-3 py-1.5 rounded-lg flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            ${h.count} dest.
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error("Erro ao ler histórico", e);
+            }
+        }
+
+        function clearHistory() {
+            if (!confirm('Limpar o histórico de envios?')) return;
+            try { 
+                localStorage.removeItem('email_history'); 
+                renderHistory();
+                showToast('Histórico limpo.', 'info');
+            } catch (e) { }
+        }
+    </script>
+</body>
+</html>
