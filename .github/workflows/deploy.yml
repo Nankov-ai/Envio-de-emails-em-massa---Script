@@ -1,0 +1,22 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare deploy folder
+        run: |
+          mkdir -p deploy
+          cp AppsScript/Index.html deploy/index.html
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: deploy
+          branch: gh-pages
