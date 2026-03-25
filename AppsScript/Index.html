@@ -409,10 +409,15 @@
     <label>Assunto</label>
     <input type="text" id="assunto" placeholder="ex: Recibo de Vencimento de {Nome}" style="margin-bottom:14px">
     <div class="tip">
-      &#128161; Use <strong>{Nome}</strong> no assunto ou no corpo para ser substituído pelo nome de cada pessoa.
+      &#128161; <strong>Placeholders disponíveis</strong> — substituídos automaticamente por cada destinatário:<br><br>
+      <code>{Nome}</code> — nome do destinatário (coluna com "nome" ou "name" no cabeçalho)<br>
+      <code>{<em>cabeçalho</em>}</code> — qualquer outra coluna, pelo nome exacto do cabeçalho<br>
+      Ex: se tiveres colunas <em>Empresa</em> e <em>NIF</em>, usa <code>{Empresa}</code> e <code>{NIF}</code><br>
+      Não é sensível a maiúsculas — <code>{empresa}</code> e <code>{EMPRESA}</code> funcionam igual.<br>
+      <strong>Sem limite de colunas</strong> — desde que cada uma tenha nome no cabeçalho.
     </div>
     <label>Corpo do e-mail</label>
-    <textarea id="corpo" placeholder="Olá {Nome},&#10;&#10;Segue em anexo o seu documento..."></textarea>
+    <textarea id="corpo" placeholder="Olá {Nome},&#10;&#10;A tua empresa é {Empresa} e o teu cargo é {Cargo}.&#10;&#10;Segue em anexo o teu documento."></textarea>
   </div>
 
   <!-- Botão Enviar -->

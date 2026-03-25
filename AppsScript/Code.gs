@@ -21,10 +21,9 @@ function loadRecipientsFromSheet(sheetUrl) {
       return { error: 'A folha está vazia ou só tem cabeçalho.' };
     }
 
-    var headers = data[0].map(function(h) {
-      return h.toString().toLowerCase().trim();
-    });
+    var headers = data[0].map(function(h) { return h.toString().toLowerCase().trim(); });
 
+    // Detectar colunas fixas: nome e email
     var emailCol = -1, nameCol = -1;
     for (var i = 0; i < headers.length; i++) {
       if (headers[i].indexOf('mail') !== -1) emailCol = i;
@@ -32,16 +31,35 @@ function loadRecipientsFromSheet(sheetUrl) {
     }
 
     if (emailCol === -1) {
-      return { error: 'Coluna de e-mail não encontrada. O cabeçalho deve conter a palavra "email" ou "mail".' };
+      return { error: 'Coluna de e-mail não encontrada. O cabeçalho deve conter "email" ou "mail".' };
+    }
+
+    // Colunas extra: todas as que não são nome nem email, com o seu label do cabeçalho
+    var extraCols = [];
+    for (var i = 0; i < headers.length; i++) {
+      if (i !== emailCol && i !== nameCol) {
+        extraCols.push({ col: i, label: headers[i] });
+      }
     }
 
     var recipients = [];
+
     for (var i = 1; i < data.length; i++) {
-      var email = data[i][emailCol].toString().trim();
-      var nome  = nameCol >= 0 ? data[i][nameCol].toString().trim() : '';
-      if (email && email.indexOf('@') !== -1) {
-        recipients.push({ Nome: nome, Email: email });
+      var row   = data[i];
+      var email = row[emailCol] ? row[emailCol].toString().trim() : '';
+      if (!email || email.indexOf('@') === -1) continue;
+
+      var rec = { Email: email };
+      rec.Nome = nameCol >= 0 && row[nameCol] ? row[nameCol].toString().trim() : '';
+
+      // Colunas extra → chave = nome do cabeçalho (ex: rec['empresa'])
+      for (var j = 0; j < extraCols.length; j++) {
+        var label = extraCols[j].label;
+        var col   = extraCols[j].col;
+        rec[label] = row[col] ? row[col].toString().trim() : '';
       }
+
+      recipients.push(rec);
     }
 
     if (recipients.length === 0) {
@@ -59,43 +77,85 @@ function parseCSVContent(csvContent) {
     var lines = csvContent.split('\n').filter(function(l) { return l.trim() !== ''; });
     if (lines.length === 0) return { error: 'CSV vazio.' };
 
-    var firstCells = lines[0].split(',').map(function(h) {
-      return h.trim().replace(/^"|"$/g, '').toLowerCase();
+    // Converter todas as linhas em arrays de células (sem limite de colunas)
+    var allRows = lines.map(function(line) {
+      return line.split(',').map(function(cell) {
+        return cell.trim().replace(/^"|"$/g, '');
+      });
     });
 
+    // Verificar se a primeira linha é cabeçalho (nenhuma célula tem @)
+    var firstRow  = allRows[0];
+    var hasHeader = firstRow.every(function(c) { return c.indexOf('@') === -1; });
+    var startLine = hasHeader ? 1 : 0;
+
     var emailCol = -1, nameCol = -1;
-    for (var i = 0; i < firstCells.length; i++) {
-      if (firstCells[i].indexOf('mail') !== -1) emailCol = i;
-      if (firstCells[i].indexOf('nome') !== -1 || firstCells[i].indexOf('name') !== -1) nameCol = i;
+
+    if (hasHeader) {
+      for (var i = 0; i < firstRow.length; i++) {
+        var h = firstRow[i].toLowerCase();
+        if (h.indexOf('mail') !== -1) emailCol = i;
+        if (h.indexOf('nome') !== -1 || h.indexOf('name') !== -1) nameCol = i;
+      }
     }
 
-    var hasHeader = emailCol !== -1;
-    var startLine = hasHeader ? 1 : 0;
-    var recipients = [];
-
-    for (var i = startLine; i < lines.length; i++) {
-      var parts = lines[i].split(',').map(function(p) { return p.trim().replace(/^"|"$/g, ''); });
-
-      if (hasHeader) {
-        var email = parts[emailCol] || '';
-        var nome  = nameCol >= 0 ? (parts[nameCol] || '') : '';
-        if (email && email.indexOf('@') !== -1) {
-          recipients.push({ Nome: nome, Email: email });
-        }
-      } else {
-        // Sem cabeçalho: tentar "Nome,Email" ou só "Email"
-        if (parts.length >= 2 && parts[1].indexOf('@') !== -1) {
-          recipients.push({ Nome: parts[0], Email: parts[1] });
-        } else if (parts[0].indexOf('@') !== -1) {
-          recipients.push({ Nome: '', Email: parts[0] });
+    // Fallback: detectar coluna de e-mail pelos dados
+    if (emailCol === -1) {
+      outer: for (var i = startLine; i < allRows.length; i++) {
+        for (var j = 0; j < allRows[i].length; j++) {
+          if (allRows[i][j].indexOf('@') !== -1) { emailCol = j; break outer; }
         }
       }
     }
 
-    if (recipients.length === 0) {
-      return { error: 'Nenhum e-mail válido encontrado no CSV.' };
+    if (emailCol === -1) return { error: 'Coluna de e-mail não encontrada no CSV.' };
+
+    // Colunas extra: com cabeçalho → usa o nome; sem cabeçalho → {Coluna A/B/C/D}
+    var extraCols = [];
+    var colLabels = ['A', 'B', 'C', 'D'];
+    if (hasHeader) {
+      for (var i = 0; i < firstRow.length; i++) {
+        if (i !== emailCol && i !== nameCol) {
+          extraCols.push({ col: i, label: firstRow[i].toLowerCase().trim() });
+        }
+      }
+    } else {
+      var idx = 0;
+      for (var i = 0; i < firstRow.length && idx < 4; i++) {
+        if (i !== emailCol) {
+          extraCols.push({ col: i, label: 'coluna ' + colLabels[idx].toLowerCase() });
+          idx++;
+        }
+      }
     }
 
+    var recipients = [];
+
+    for (var i = startLine; i < allRows.length; i++) {
+      var row   = allRows[i];
+      var email = (row[emailCol] || '').trim();
+      if (!email || email.indexOf('@') === -1) continue;
+
+      var rec = { Email: email };
+
+      // Nome: da coluna detectada, ou primeira coluna não-email
+      if (nameCol >= 0) {
+        rec.Nome = row[nameCol] || '';
+      } else {
+        rec.Nome = '';
+        for (var j = 0; j < row.length; j++) {
+          if (j !== emailCol) { rec.Nome = row[j] || ''; break; }
+        }
+      }
+
+      for (var j = 0; j < extraCols.length; j++) {
+        rec[extraCols[j].label] = row[extraCols[j].col] || '';
+      }
+
+      recipients.push(rec);
+    }
+
+    if (recipients.length === 0) return { error: 'Nenhum e-mail válido encontrado no CSV.' };
     return { recipients: recipients, count: recipients.length };
   } catch (e) {
     return { error: 'Erro ao processar CSV: ' + e.message };
@@ -149,6 +209,18 @@ function sendAllEmails(params) {
       try {
         var subjectFinal = subject.replace(/\{Nome\}/gi, nome);
         var bodyFinal    = body.replace(/\{Nome\}/gi, nome);
+
+        // Substituir variáveis das colunas extra pelo nome do cabeçalho (case-insensitive)
+        var keys = Object.keys(pessoa);
+        for (var k = 0; k < keys.length; k++) {
+          var key = keys[k];
+          if (key === 'Nome' || key === 'Email') continue;
+          var val        = pessoa[key] || '';
+          var escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          var regex      = new RegExp('\\{' + escapedKey + '\\}', 'gi');
+          subjectFinal   = subjectFinal.replace(regex, val);
+          bodyFinal      = bodyFinal.replace(regex, val);
+        }
 
         var options     = {};
         var attachments = [];
