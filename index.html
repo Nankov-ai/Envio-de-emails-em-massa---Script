@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Envio de E-mails</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      color: #202124;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a73e8;
+    }
+    .header p {
+      font-size: 13px;
+      color: #5f6368;
+      margin-top: 4px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      padding: 22px 24px;
+      margin-bottom: 16px;
+      max-width: 680px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a73e8;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title .step {
+      background: #1a73e8;
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab-btn {
+      padding: 7px 16px;
+      border: 1.5px solid #dadce0;
+      border-radius: 20px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      color: #5f6368;
+      transition: all .15s;
+    }
+    .tab-btn.active {
+      background: #e8f0fe;
+      border-color: #1a73e8;
+      color: #1a73e8;
+      font-weight: 600;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Inputs */
+    label { font-size: 13px; color: #3c4043; display: block; margin-bottom: 5px; }
+    input[type="text"], input[type="url"], textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #dadce0;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #202124;
+      transition: border .15s;
+      outline: none;
+    }
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    textarea:focus {
+      border-color: #1a73e8;
+    }
+    textarea { resize: vertical; min-height: 120px; }
+
+    .input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .input-row input { flex: 1; }
+
+    /* File input */
+    .file-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: #f8f9fa;
+      border: 1.5px dashed #dadce0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #5f6368;
+      width: 100%;
+      transition: border .15s;
+    }
+    .file-label:hover { border-color: #1a73e8; color: #1a73e8; }
+    input[type="file"] { display: none; }
+
+    /* Buttons */
+    .btn {
+      padding: 9px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .btn-primary { background: #1a73e8; color: #fff; }
+    .btn-primary:hover { background: #1557b0; }
+    .btn-primary:disabled { background: #a8c7fa; cursor: not-allowed; }
+    .btn-outline { background: #fff; color: #1a73e8; border: 1.5px solid #1a73e8; }
+    .btn-outline:hover { background: #e8f0fe; }
+    .btn-send {
+      width: 100%;
+      max-width: 680px;
+      display: block;
+      margin: 0 auto;
+      padding: 14px;
+      font-size: 15px;
+      border-radius: 8px;
+      background: #34a853;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: inherit;
+      transition: background .15s;
+    }
+    .btn-send:hover { background: #2d8e47; }
+    .btn-send:disabled { background: #a8d5b5; cursor: not-allowed; }
+
+    /* Status messages */
+    .status {
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: none;
+    }
+    .status.ok    { background: #e6f4ea; color: #137333; display: block; }
+    .status.error { background: #fce8e6; color: #c5221f; display: block; }
+    .status.info  { background: #e8f0fe; color: #1a73e8; display: block; }
+
+    /* Warning */
+    .warning {
+      background: #fef7e0;
+      border-left: 3px solid #f9ab00;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #594300;
+      margin-top: 10px;
+    }
+
+    /* Tip */
+    .tip {
+      background: #e8f0fe;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #1a73e8;
+      margin-bottom: 10px;
+    }
+
+    /* Overlay */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .overlay.active { display: flex; }
+    .overlay-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 32px 28px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: 0 4px 24px rgba(0,0,0,.2);
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid #e8f0fe;
+      border-top-color: #1a73e8;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .overlay-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .overlay-sub   { font-size: 13px; color: #5f6368; }
+
+    /* Results */
+    .results {
+      display: none;
+      max-width: 680px;
+      margin: 0 auto 16px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      padding: 22px 24px;
+    }
+    .results.active { display: block; }
+    .results-header { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+    .results-row { display: flex; gap: 12px; margin-bottom: 16px; }
+    .results-box {
+      flex: 1;
+      padding: 14px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .results-box .count { font-size: 28px; font-weight: 700; }
+    .results-box .label { font-size: 12px; margin-top: 2px; }
+    .results-box.ok    { background: #e6f4ea; color: #137333; }
+    .results-box.err   { background: #fce8e6; color: #c5221f; }
+    .results-errors { font-size: 12px; color: #c5221f; }
+    .results-errors li { margin-top: 4px; word-break: break-all; }
+
+    /* Attachments toggle */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { display: none; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #dadce0;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform .2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: #1a73e8; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+    .toggle-label { font-size: 13px; color: #3c4043; }
+
+    .attachments-content { display: none; }
+    .attachments-content.active { display: block; }
+
+    /* Confirm modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px 24px;
+      max-width: 360px;
+      width: 90%;
+    }
+    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .modal-body  { font-size: 14px; color: #3c4043; margin-bottom: 20px; line-height: 1.5; }
+    .modal-btns  { display: flex; gap: 10px; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>&#9993; Portal de Envio de E-mails</h1>
+    <p>Envia e-mails personalizados em massa directamente pelo Google Workspace</p>
+  </div>
+
+  <!-- CARD 1: Destinatários -->
+  <div class="card">
+    <div class="card-title">
+      <span class="step">1</span> Destinatários
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('dest', 'sheets', this)">Google Sheets</button>
+      <button class="tab-btn"        onclick="switchTab('dest', 'csv', this)">Ficheiro CSV</button>
+    </div>
+
+    <!-- Sheets -->
+    <div id="dest-sheets" class="tab-panel active">
+      <label>URL da folha Google Sheets</label>
+      <div class="input-row">
+        <input type="url" id="sheetsUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+        <button class="btn btn-primary" onclick="loadSheets()">Carregar</button>
+      </div>
+    </div>
+
+    <!-- CSV -->
+    <div id="dest-csv" class="tab-panel">
+      <label>Ficheiro CSV com destinatários</label>
+      <label class="file-label" for="csvFile">
+        &#128196; Clique para escolher ficheiro CSV
+      </label>
+      <input type="file" id="csvFile" accept=".csv,.txt" onchange="loadCSV(this)">
+    </div>
+
+    <div id="destStatus" class="status"></div>
+  </div>
+
+  <!-- CARD 2: Anexos -->
+  <div class="card">
+    <div class="card-title">
+      <span class="step">2</span> Anexos Personalizados
+    </div>
+
+    <div class="toggle-row">
+      <label class="toggle-switch">
+        <input type="checkbox" id="anexosToggle" onchange="toggleAnexos(this)">
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-label">Incluir anexos personalizados (opcional)</span>
+    </div>
+
+    <div id="anexosContent" class="attachments-content">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('anx', 'drive', this)">Google Drive</button>
+        <button class="tab-btn"        onclick="switchTab('anx', 'upload', this)">Upload de Ficheiros</button>
+      </div>
+
+      <!-- Drive -->
+      <div id="anx-drive" class="tab-panel active">
+        <label>URL da pasta no Google Drive</label>
+        <div class="input-row">
+          <input type="url" id="driveFolderUrl" placeholder="https://drive.google.com/drive/folders/...">
+          <button class="btn btn-outline" onclick="verifyDrive()">Verificar</button>
+        </div>
+      </div>
+
+      <!-- Upload -->
+      <div id="anx-upload" class="tab-panel">
+        <label>Selecionar ficheiros de anexo (vários ao mesmo tempo)</label>
+        <label class="file-label" for="uploadFiles">
+          &#128204; Clique para escolher ficheiros
+        </label>
+        <input type="file" id="uploadFiles" multiple onchange="handleUpload(this)">
+      </div>
+
+      <div id="anxStatus" class="status"></div>
+      <div class="warning">
+        &#9888;&#65039; O nome de cada ficheiro deve corresponder ao <strong>Nome</strong> ou ao <strong>E-mail</strong> do destinatário.<br>
+        Exemplo: <em>joao.silva.pdf</em> ou <em>joao@empresa.pt.pdf</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 3: Mensagem -->
+  <div class="card">
+    <div class="card-title">
+      <span class="step">3</span> Mensagem
+    </div>
+    <label>Assunto</label>
+    <input type="text" id="assunto" placeholder="ex: Recibo de Vencimento de {Nome}" style="margin-bottom:14px">
+    <div class="tip">
+      &#128161; <strong>Placeholders disponíveis</strong> — substituídos automaticamente por cada destinatário:<br><br>
+      <code>{Nome}</code> — nome do destinatário (coluna com "nome" ou "name" no cabeçalho)<br>
+      <code>{<em>cabeçalho</em>}</code> — qualquer outra coluna, pelo nome exacto do cabeçalho<br>
+      Ex: se tiveres colunas <em>Empresa</em> e <em>NIF</em>, usa <code>{Empresa}</code> e <code>{NIF}</code><br>
+      Não é sensível a maiúsculas — <code>{empresa}</code> e <code>{EMPRESA}</code> funcionam igual.<br>
+      <strong>Sem limite de colunas</strong> — desde que cada uma tenha nome no cabeçalho.
+    </div>
+    <label>Corpo do e-mail</label>
+    <textarea id="corpo" placeholder="Olá {Nome},&#10;&#10;A tua empresa é {Empresa} e o teu cargo é {Cargo}.&#10;&#10;Segue em anexo o teu documento."></textarea>
+  </div>
+
+  <!-- Botão Enviar -->
+  <button class="btn-send" id="btnEnviar" onclick="confirmarEnvio()">
+    &#128640; INICIAR ENVIOS
+  </button>
+
+  <!-- Modal de Confirmação -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-title">Confirmar Envios</div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-btns">
+        <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="iniciarEnvio()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay de Progresso -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-box">
+      <div class="spinner"></div>
+      <div class="overlay-title">A enviar e-mails...</div>
+      <div class="overlay-sub" id="overlayMsg">Por favor aguarde. Não feche esta janela.</div>
+    </div>
+  </div>
+
+  <!-- Resultados -->
+  <div class="results" id="results">
+    <div class="results-header">&#9989; Envios Concluídos</div>
+    <div class="results-row">
+      <div class="results-box ok">
+        <div class="count" id="resSent">0</div>
+        <div class="label">Enviados com sucesso</div>
+      </div>
+      <div class="results-box err">
+        <div class="count" id="resErrors">0</div>
+        <div class="label">Falharam</div>
+      </div>
+    </div>
+    <ul class="results-errors" id="resErrorList"></ul>
+    <button class="btn btn-outline" onclick="resetar()" style="margin-top:14px; width:100%">
+      Novo Envio
+    </button>
+  </div>
+
+  <script>
+    // ── Estado global ──────────────────────────────────────────
+    var state = {
+      recipients  : [],
+      driveFiles  : [],
+      uploadedFiles: [],
+      activeAnxTab: 'drive'
+    };
+
+    // ── Tabs ──────────────────────────────────────────────────
+    function switchTab(group, tab, btn) {
+      document.querySelectorAll('#' + group + '-sheets, #' + group + '-csv, #' + group + '-drive, #' + group + '-upload')
+        .forEach(function(el) {
+          if (el.id.startsWith(group + '-')) el.classList.remove('active');
+        });
+      var panel = document.getElementById(group + '-' + tab);
+      if (panel) panel.classList.add('active');
+
+      var parentTabs = btn.closest('.tabs');
+      parentTabs.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+
+      if (group === 'anx') state.activeAnxTab = tab;
+    }
+
+    // ── Toggle Anexos ─────────────────────────────────────────
+    function toggleAnexos(el) {
+      document.getElementById('anexosContent').classList.toggle('active', el.checked);
+      if (!el.checked) {
+        state.driveFiles   = [];
+        state.uploadedFiles = [];
+        setStatus('anxStatus', '', '');
+      }
+    }
+
+    // ── Destinatários: Sheets ─────────────────────────────────
+    function loadSheets() {
+      var url = document.getElementById('sheetsUrl').value.trim();
+      if (!url) { setStatus('destStatus', 'Introduza o URL da folha.', 'error'); return; }
+      setStatus('destStatus', 'A carregar...', 'info');
+      state.recipients = [];
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res.error) { setStatus('destStatus', res.error, 'error'); return; }
+          state.recipients = res.recipients;
+          setStatus('destStatus', '&#10003; ' + res.count + ' destinatário(s) carregado(s) com sucesso.', 'ok');
+        })
+        .withFailureHandler(function(e) { setStatus('destStatus', 'Erro: ' + e.message, 'error'); })
+        .loadRecipientsFromSheet(url);
+    }
+
+    // ── Destinatários: CSV ────────────────────────────────────
+    function loadCSV(input) {
+      var file = input.files[0];
+      if (!file) return;
+      setStatus('destStatus', 'A processar CSV...', 'info');
+      state.recipients = [];
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res.error) { setStatus('destStatus', res.error, 'error'); return; }
+            state.recipients = res.recipients;
+            setStatus('destStatus', '&#10003; ' + res.count + ' destinatário(s) carregado(s) com sucesso.', 'ok');
+          })
+          .withFailureHandler(function(e) { setStatus('destStatus', 'Erro: ' + e.message, 'error'); })
+          .parseCSVContent(e.target.result);
+      };
+      reader.readAsText(file, 'utf-8');
+    }
+
+    // ── Anexos: Drive ─────────────────────────────────────────
+    function verifyDrive() {
+      var url = document.getElementById('driveFolderUrl').value.trim();
+      if (!url) { setStatus('anxStatus', 'Introduza o URL da pasta do Drive.', 'error'); return; }
+      setStatus('anxStatus', 'A verificar pasta...', 'info');
+      state.driveFiles = [];
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res.error) { setStatus('anxStatus', res.error, 'error'); return; }
+          state.driveFiles = res.files;
+          setStatus('anxStatus', '&#10003; Pasta "' + res.folderName + '" encontrada com ' + res.count + ' ficheiro(s).', 'ok');
+        })
+        .withFailureHandler(function(e) { setStatus('anxStatus', 'Erro: ' + e.message, 'error'); })
+        .verifyDriveFolder(url);
+    }
+
+    // ── Anexos: Upload ─────────────────────────────────────────
+    function handleUpload(input) {
+      var files = Array.from(input.files);
+      if (!files.length) return;
+      setStatus('anxStatus', 'A carregar ' + files.length + ' ficheiro(s)...', 'info');
+      state.uploadedFiles = [];
+
+      var loaded = 0;
+      files.forEach(function(file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var base64 = e.target.result.split(',')[1];
+          state.uploadedFiles.push({ name: file.name, data: base64, mimeType: file.type || 'application/octet-stream' });
+          loaded++;
+          if (loaded === files.length) {
+            setStatus('anxStatus', '&#10003; ' + loaded + ' ficheiro(s) prontos para anexar.', 'ok');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ── Confirmação ───────────────────────────────────────────
+    function confirmarEnvio() {
+      if (!state.recipients.length) {
+        setStatus('destStatus', 'Carregue a lista de destinatários primeiro.', 'error');
+        document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      var assunto = document.getElementById('assunto').value.trim();
+      var corpo   = document.getElementById('corpo').value.trim();
+      if (!assunto) { alert('Preencha o assunto do e-mail.'); return; }
+      if (!corpo)   { alert('Preencha o corpo do e-mail.'); return; }
+
+      var msg = 'Tem a certeza que deseja enviar <strong>' + state.recipients.length + ' e-mail(s)</strong> individuais?';
+      if (state.driveFiles.length || state.uploadedFiles.length) {
+        msg += '<br><br>Serão incluídos anexos quando o nome do ficheiro corresponder ao destinatário.';
+      }
+      document.getElementById('modalBody').innerHTML = msg;
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function fecharModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    // ── Envio ─────────────────────────────────────────────────
+    function iniciarEnvio() {
+      fecharModal();
+      document.getElementById('overlay').classList.add('active');
+      document.getElementById('btnEnviar').disabled = true;
+
+      var params = {
+        recipients   : state.recipients,
+        subject      : document.getElementById('assunto').value.trim(),
+        body         : document.getElementById('corpo').value.trim(),
+        driveFiles   : state.driveFiles,
+        uploadedFiles: state.uploadedFiles
+      };
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          document.getElementById('overlay').classList.remove('active');
+          mostrarResultados(res);
+        })
+        .withFailureHandler(function(e) {
+          document.getElementById('overlay').classList.remove('active');
+          document.getElementById('btnEnviar').disabled = false;
+          alert('Erro crítico: ' + e.message);
+        })
+        .sendAllEmails(params);
+    }
+
+    // ── Resultados ─────────────────────────────────────────────
+    function mostrarResultados(res) {
+      if (res.fatalError) {
+        alert('Erro fatal: ' + res.fatalError);
+        document.getElementById('btnEnviar').disabled = false;
+        return;
+      }
+      document.getElementById('resSent').textContent   = res.sent;
+      document.getElementById('resErrors').textContent = res.errors;
+
+      var ul = document.getElementById('resErrorList');
+      ul.innerHTML = '';
+      if (res.errorDetails && res.errorDetails.length) {
+        var title = document.createElement('li');
+        title.style.fontWeight = '600';
+        title.style.marginBottom = '4px';
+        title.textContent = 'Detalhes dos erros:';
+        ul.appendChild(title);
+        res.errorDetails.forEach(function(d) {
+          var li = document.createElement('li');
+          li.textContent = d;
+          ul.appendChild(li);
+        });
+      }
+
+      document.getElementById('results').classList.add('active');
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ── Reset ─────────────────────────────────────────────────
+    function resetar() {
+      state.recipients   = [];
+      state.driveFiles   = [];
+      state.uploadedFiles = [];
+      document.getElementById('sheetsUrl').value     = '';
+      document.getElementById('csvFile').value        = '';
+      document.getElementById('driveFolderUrl').value = '';
+      document.getElementById('uploadFiles').value    = '';
+      document.getElementById('assunto').value        = '';
+      document.getElementById('corpo').value          = '';
+      document.getElementById('anexosToggle').checked = false;
+      document.getElementById('anexosContent').classList.remove('active');
+      setStatus('destStatus', '', '');
+      setStatus('anxStatus', '', '');
+      document.getElementById('results').classList.remove('active');
+      document.getElementById('btnEnviar').disabled = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── Helper ────────────────────────────────────────────────
+    function setStatus(id, msg, type) {
+      var el = document.getElementById(id);
+      el.className = 'status' + (type ? ' ' + type : '');
+      el.innerHTML = msg;
+    }
+  </script>
+</body>
+</html>
